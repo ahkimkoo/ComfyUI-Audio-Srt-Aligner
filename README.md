@@ -4,7 +4,7 @@
 
 ## 功能特性
 
-- **AudioSrtAligner (文稿校对字幕)** — 将参考文本/台词文稿与音频对齐，生成 SRT 字幕。支持中英文等多种语言，自动检测语言，支持字幕最大字数限制与智能分词切分。
+- **AudioSrtAligner (文稿校对字幕)** — 将参考文本/台词文稿与音频对齐，生成 SRT 字幕。支持中英文等多种语言，自动检测语言，支持字幕最大字数限制与智能分词切分。留空参考文本则直接使用 Whisper 原始识别结果（无校对模式）。
 - **VideoSrtOverlay (字幕合成)** — 将 SRT 字幕渲染合成到视频画面上。支持中文字体下拉选择、自动折行、描边阴影、淡入淡出等效果。
 
 ## 安装
@@ -46,7 +46,7 @@ LoadAudio → AudioSrtAligner → VideoSrtOverlay → Preview/Save
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
 | `audio` | AUDIO | 是 | — | 音频输入（来自 LoadAudio 等节点） |
-| `reference_text` | STRING | 是 | — | 参考文本/台词文稿 |
+| `reference_text` | STRING | 否 | — | 参考文本/台词文稿。留空则直接使用 Whisper 原始识别结果（无校对） |
 | `model_size` | COMBO | 是 | `small` | Whisper 模型：tiny, base, small, medium, large-v3 |
 | `language` | STRING | 是 | `zh` | 语言代码（zh, en, ja 等），留空自动检测 |
 | `beam_size` | INT | 否 | 5 | Beam search 大小（1-10） |

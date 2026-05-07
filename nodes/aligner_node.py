@@ -412,8 +412,8 @@ class AudioSrtAligner:
     ) -> Tuple[str, str, int, float]:
         """Run alignment pipeline and return SRT content."""
         # --- Validate inputs ---
-        if not reference_text or not reference_text.strip():
-            raise Exception("[AudioSrtAligner] Reference text must not be empty.")
+        # reference_text can be empty - in that case we skip alignment and use raw Whisper transcription
+        has_reference = bool(reference_text and reference_text.strip())
 
         # --- Convert AUDIO dict to temp WAV file ---
         wav_path: Optional[str] = None
@@ -434,13 +434,44 @@ class AudioSrtAligner:
             beam_size=beam_size,
         )
 
-        # --- Run alignment ---
+        # --- Run alignment or raw transcription ---
         try:
-            srt_string, detected_language, srt_entries, coverage = generate_srt_string(
-                audio_path=Path(wav_path),
-                reference_text=reference_text.strip(),
-                config=config,
-            )
+            if has_reference:
+                # With reference text: run alignment (校对模式)
+                srt_string, detected_language, srt_entries, coverage = generate_srt_string(
+                    audio_path=Path(wav_path),
+                    reference_text=reference_text.strip(),
+                    config=config,
+                )
+            else:
+                # Without reference text: use raw Whisper transcription (无校对模式)
+                # Import the transcribe function from engine
+                _engine_module = sys.modules.get("audio_srt_aligner_engine")
+                if _engine_module is None:
+                    raise Exception("Engine module not loaded")
+                
+                timed_entries, audio_end, detected_language, segment_count = _engine_module.transcribe_to_timed_subtitles(
+                    audio_path=Path(wav_path),
+                    model_name=config.model_name,
+                    device=config.device,
+                    compute_type=config.compute_type,
+                    language=config.language,
+                    beam_size=config.beam_size,
+                )
+                
+                # Convert TimedSubtitleEntry to SrtEntry and format
+                srt_entries_list = [
+                    SrtEntry(
+                        index=i + 1,
+                        start=e.start,
+                        end=e.end,
+                        text=e.text,
+                    )
+                    for i, e in enumerate(timed_entries)
+                ]
+                srt_string = format_srt(srt_entries_list)
+                srt_entries = len(srt_entries_list)
+                coverage = 0.0  # No reference text means no coverage metric
         except ValueError as exc:
             raise Exception(f"[AudioSrtAligner] {exc}") from exc
         except ImportError as exc:
@@ -449,7 +480,7 @@ class AudioSrtAligner:
                 "Install with: pip install faster-whisper"
             ) from exc
         except Exception as exc:
-            raise Exception(f"[AudioSrtAligner] Alignment failed: {exc}") from exc
+            raise Exception(f"[AudioSrtAligner] Processing failed: {exc}") from exc
         finally:
             # Always clean up temp WAV file
             if wav_path:
@@ -458,8 +489,8 @@ class AudioSrtAligner:
                 except OSError:
                     pass
 
-        # --- Post-process: apply max_chars subtitle length limit ---
-        if max_chars and max_chars > 0:
+        # --- Post-process: apply max_chars subtitle length limit (only when reference text exists) ---
+        if has_reference and max_chars and max_chars > 0:
             srt_string, srt_entries = _adjust_srt_by_char_limit(
                 reference_text.strip(), srt_string, max_chars,
             )
