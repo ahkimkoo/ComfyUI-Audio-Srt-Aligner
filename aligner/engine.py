@@ -353,7 +353,7 @@ def transcribe_to_tokens(
         vad_filter=True,
         condition_on_previous_text=False,
         compression_ratio_threshold=2.4,
-        logprob_threshold=-1.0,
+        log_prob_threshold=-1.0,
         no_speech_threshold=0.6,
     )
 
@@ -475,7 +475,7 @@ def transcribe_to_timed_subtitles(
         vad_filter=True,
         condition_on_previous_text=False,
         compression_ratio_threshold=2.4,
-        logprob_threshold=-1.0,
+        log_prob_threshold=-1.0,
         no_speech_threshold=0.6,
     )
 
