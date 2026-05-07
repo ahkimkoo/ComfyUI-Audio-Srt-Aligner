@@ -27,6 +27,10 @@ pip install -r requirements.txt
 
 ## 典型工作流
 
+![工作流截图](example/snapshot.png)
+
+📥 [下载工作流文件 (Audio-srt-aligner--srt-overlay.json)](example/Audio-srt-aligner--srt-overlay.json)
+
 ```
 LoadAudio → AudioSrtAligner → VideoSrtOverlay → Preview/Save
               ↑                    ↑
