@@ -296,6 +296,123 @@ def _adjust_srt_by_char_limit(
     return format_srt(final), len(final)
 
 
+def _process_srt_entries(
+    entries: List[SrtEntry],
+    max_chars: int,
+) -> Tuple[str, int]:
+    """Process SRT entries: split by punctuation, clean, and apply max_chars limit.
+
+    This function is used when there is no reference text (raw Whisper transcription).
+    It applies the same punctuation-based splitting and max_chars logic.
+
+    1. Split each entry's text by punctuation into clauses.
+    2. Remove punctuation from clauses (keep only readable chars).
+    3. Rebuild SRT entries grouping clauses up to max_chars (with word-boundary split).
+    4. Join multiple clauses with space; single clause exceeding max_chars is word-split.
+    5. Redistribute timing proportionally.
+
+    Returns (processed_srt_string, entry_count).
+    """
+    if not entries:
+        return "", 0
+
+    # Collect all clauses with their original timing info
+    # Each item: (start_time, end_time, clause_text)
+    all_clauses: List[Tuple[float, float, str]] = []
+
+    for entry in entries:
+        text = entry.text
+        if not text or not text.strip():
+            continue
+
+        # Split by punctuation
+        clauses = _split_by_punctuation(text)
+        if not clauses:
+            continue
+
+        # Calculate time per character for this entry
+        entry_dur = entry.end - entry.start
+        entry_chars = sum(len(c) for c in clauses)
+        if entry_chars == 0:
+            entry_chars = 1
+
+        current_time = entry.start
+        for clause in clauses:
+            clause_clean = _clean_text(clause)
+            if not clause_clean:
+                continue
+            # Estimate duration based on character count
+            clause_chars = len(clause_clean)
+            clause_dur = (clause_chars / entry_chars) * entry_dur
+            clause_end = min(current_time + clause_dur, entry.end)
+
+            all_clauses.append((current_time, clause_end, clause_clean))
+            current_time = clause_end
+
+    if not all_clauses:
+        return format_srt(entries), len(entries)
+
+    # Group clauses by max_chars
+    groups: List[List[Tuple[float, float, str]]] = []
+    cur_group: List[Tuple[float, float, str]] = []
+    cur_count = 0
+
+    for clause_info in all_clauses:
+        start, end, clause_text = clause_info
+        cc = _count_chars(clause_text)
+        if cur_group:
+            combined = cur_count + 1 + cc  # +1 for space between clauses
+            if combined <= max_chars:
+                cur_group.append(clause_info)
+                cur_count = combined
+            else:
+                groups.append(cur_group)
+                cur_group = [clause_info]
+                cur_count = cc
+        else:
+            cur_group = [clause_info]
+            cur_count = cc
+
+    if cur_group:
+        groups.append(cur_group)
+
+    # Build final SRT entries
+    final: List[SrtEntry] = []
+
+    for group in groups:
+        first_start = group[0][0]
+        last_end = group[-1][1]
+        # Join clauses with space
+        display_text = " ".join(c[2] for c in group)
+
+        # Check if single clause exceeds max_chars and needs word-splitting
+        if len(group) == 1 and _count_chars(display_text) > max_chars:
+            parts = _split_text_at_limit(display_text, max_chars)
+            total_chars = sum(_count_chars(p) for p in parts) or 1
+            dur = last_end - first_start
+            elapsed = 0.0
+            for part in parts:
+                pc = _count_chars(part)
+                pd = (pc / total_chars) * dur
+                final.append(SrtEntry(
+                    index=0,
+                    start=first_start + elapsed,
+                    end=first_start + elapsed + pd,
+                    text=part,
+                ))
+                elapsed += pd
+        else:
+            final.append(SrtEntry(
+                index=0, start=first_start, end=last_end, text=display_text,
+            ))
+
+    # Renumber
+    for idx, e in enumerate(final):
+        e.index = idx + 1
+
+    return format_srt(final), len(final)
+
+
 def _audio_to_wav_file(audio: dict) -> str:
     """Convert ComfyUI AUDIO dict to a temporary WAV file.
 
@@ -489,11 +606,18 @@ class AudioSrtAligner:
                 except OSError:
                     pass
 
-        # --- Post-process: apply max_chars subtitle length limit (only when reference text exists) ---
-        if has_reference and max_chars and max_chars > 0:
-            srt_string, srt_entries = _adjust_srt_by_char_limit(
-                reference_text.strip(), srt_string, max_chars,
-            )
+        # --- Post-process: apply max_chars subtitle length limit ---
+        if max_chars and max_chars > 0:
+            if has_reference:
+                # With reference text: use reference-based alignment adjustment
+                srt_string, srt_entries = _adjust_srt_by_char_limit(
+                    reference_text.strip(), srt_string, max_chars,
+                )
+            else:
+                # Without reference text: process raw Whisper transcription
+                # Parse current SRT and apply punctuation-based splitting + max_chars
+                entries = parse_srt(srt_string)
+                srt_string, srt_entries = _process_srt_entries(entries, max_chars)
 
         return (
             srt_string,
