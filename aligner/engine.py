@@ -352,13 +352,13 @@ def transcribe_to_tokens(
         word_timestamps=True,
         vad_filter=True,
         vad_parameters=dict(
-            min_silence_duration_ms=500,
+            min_silence_duration_ms=1000,
             speech_pad_ms=400,
         ),
-        condition_on_previous_text=False,
+        condition_on_previous_text=True,
         compression_ratio_threshold=2.4,
         log_prob_threshold=-1.0,
-        no_speech_threshold=0.3,
+        no_speech_threshold=0.6,
     )
 
     timed_tokens: List[TimedToken] = []
@@ -478,13 +478,13 @@ def transcribe_to_timed_subtitles(
         word_timestamps=True,
         vad_filter=True,
         vad_parameters=dict(
-            min_silence_duration_ms=500,
+            min_silence_duration_ms=1000,
             speech_pad_ms=400,
         ),
-        condition_on_previous_text=False,
+        condition_on_previous_text=True,
         compression_ratio_threshold=2.4,
         log_prob_threshold=-1.0,
-        no_speech_threshold=0.3,
+        no_speech_threshold=0.6,
     )
 
     entries: List[TimedSubtitleEntry] = []

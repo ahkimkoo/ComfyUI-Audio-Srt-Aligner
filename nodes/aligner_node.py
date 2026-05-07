@@ -307,14 +307,18 @@ def _process_srt_entries(
 
     1. Split each entry's text by punctuation into clauses.
     2. Remove punctuation from clauses (keep only readable chars).
-    3. Rebuild SRT entries grouping clauses up to max_chars (with word-boundary split).
-    4. Join multiple clauses with space; single clause exceeding max_chars is word-split.
-    5. Redistribute timing proportionally.
+    3. Filter out hallucinated segments (very few chars spanning very long time).
+    4. Rebuild SRT entries grouping clauses up to max_chars with duration cap.
+    5. Join multiple clauses with space; single clause exceeding max_chars is word-split.
+    6. Redistribute timing proportionally.
 
     Returns (processed_srt_string, entry_count).
     """
     if not entries:
         return "", 0
+
+    MAX_ENTRY_DURATION = 8.0  # seconds — hard cap per subtitle entry
+    MAX_CHARS_PER_SEC = 2.0   # chars/sec threshold — below this is likely hallucination
 
     # Collect all clauses with their original timing info
     # Each item: (start_time, end_time, clause_text)
@@ -325,13 +329,22 @@ def _process_srt_entries(
         if not text or not text.strip():
             continue
 
+        entry_dur = entry.end - entry.start
+
+        # Skip entries that are likely hallucinations:
+        # very few characters spanning a very long time
+        if entry_dur > 10.0:
+            chars = len(text.strip())
+            density = chars / entry_dur  # chars per second
+            if density < MAX_CHARS_PER_SEC:
+                continue  # skip hallucinated/empty-music segments
+
         # Split by punctuation
         clauses = _split_by_punctuation(text)
         if not clauses:
             continue
 
         # Calculate time per character for this entry
-        entry_dur = entry.end - entry.start
         entry_chars = sum(len(c) for c in clauses)
         if entry_chars == 0:
             entry_chars = 1
@@ -346,32 +359,56 @@ def _process_srt_entries(
             clause_dur = (clause_chars / entry_chars) * entry_dur
             clause_end = min(current_time + clause_dur, entry.end)
 
-            all_clauses.append((current_time, clause_end, clause_clean))
+            # If a single clause spans too long, split by character
+            if clause_dur > MAX_ENTRY_DURATION:
+                n = len(clause_clean)
+                chars_per_sec = n / clause_dur
+                chunk_chars = max(1, int(MAX_ENTRY_DURATION * chars_per_sec))
+                if chunk_chars < 2 and n > 2:
+                    chunk_chars = 2
+                for ci in range(0, n, chunk_chars):
+                    sub_text = clause_clean[ci:ci + chunk_chars]
+                    if not sub_text:
+                        continue
+                    frac_s = ci / n
+                    frac_e = min((ci + chunk_chars) / n, 1.0)
+                    sub_start = current_time + clause_dur * frac_s
+                    sub_end = current_time + clause_dur * frac_e
+                    all_clauses.append((sub_start, sub_end, sub_text))
+            else:
+                all_clauses.append((current_time, clause_end, clause_clean))
+
             current_time = clause_end
 
     if not all_clauses:
         return format_srt(entries), len(entries)
 
-    # Group clauses by max_chars
+    # Group clauses by max_chars AND max duration
     groups: List[List[Tuple[float, float, str]]] = []
     cur_group: List[Tuple[float, float, str]] = []
     cur_count = 0
+    cur_dur = 0.0
 
     for clause_info in all_clauses:
         start, end, clause_text = clause_info
         cc = _count_chars(clause_text)
+        clause_dur = end - start
         if cur_group:
-            combined = cur_count + 1 + cc  # +1 for space between clauses
-            if combined <= max_chars:
+            combined_count = cur_count + 1 + cc  # +1 for space between clauses
+            combined_dur = cur_dur + clause_dur
+            if combined_count <= max_chars and combined_dur <= MAX_ENTRY_DURATION:
                 cur_group.append(clause_info)
-                cur_count = combined
+                cur_count = combined_count
+                cur_dur = combined_dur
             else:
                 groups.append(cur_group)
                 cur_group = [clause_info]
                 cur_count = cc
+                cur_dur = clause_dur
         else:
             cur_group = [clause_info]
             cur_count = cc
+            cur_dur = clause_dur
 
     if cur_group:
         groups.append(cur_group)
