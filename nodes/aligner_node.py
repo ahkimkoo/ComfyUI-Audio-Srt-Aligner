@@ -186,6 +186,7 @@ def _adjust_srt_by_char_limit(
         return srt_string, 0
 
     # ---- Build char→time arrays from SRT entries ----
+    MAX_CHARS_PER_SEC = 3.0
     char_starts: List[float] = []
     char_ends: List[float] = []
     all_clean = ""
@@ -194,8 +195,16 @@ def _adjust_srt_by_char_limit(
         clean = entry.text.replace(" ", "")
         if not clean:
             continue
-        n = len(clean)
+        # Skip likely hallucination entries
         dur = entry.end - entry.start
+        if dur > 10.0:
+            density = len(clean) / dur
+            if density < MAX_CHARS_PER_SEC:
+                continue
+            unique_chars = len(set(clean))
+            if len(clean) > 3 and unique_chars / len(clean) < 0.4:
+                continue
+        n = len(clean)
         for j in range(n):
             frac_start = j / n
             frac_end = (j + 1) / n
@@ -227,33 +236,45 @@ def _adjust_srt_by_char_limit(
     if not clause_spans:
         return srt_string, len(entries)
 
-    # ---- Greedy group by max_chars ----
+    n_chars = len(char_starts)
+
+    # ---- Greedy group by max_chars AND max duration ----
+    MAX_ENTRY_DURATION = 8.0  # seconds — hard cap per subtitle entry
     groups: List[List[Tuple[int, int, str]]] = []
     cur_group: List[Tuple[int, int, str]] = []
     cur_count = 0
+    cur_start_time = 0.0
 
     for span in clause_spans:
         _, _, clause_text = span
         cc = _count_chars(clause_text)
+        # Estimate this clause's timing
+        span_cs = max(0, min(span[0], n_chars - 1))
+        span_ce = max(0, min(span[1] - 1, n_chars - 1))
+        clause_start = char_starts[span_cs] if span_cs < len(char_starts) else 0.0
+        clause_end = char_ends[span_ce] if span_ce < len(char_ends) else 0.0
+
         if cur_group:
             combined = cur_count + 1 + cc  # +1 for joining space
-            if combined <= max_chars:
+            combined_dur = clause_end - cur_start_time
+            if combined <= max_chars and combined_dur <= MAX_ENTRY_DURATION:
                 cur_group.append(span)
                 cur_count = combined
             else:
                 groups.append(cur_group)
                 cur_group = [span]
                 cur_count = cc
+                cur_start_time = clause_start
         else:
             cur_group = [span]
             cur_count = cc
+            cur_start_time = clause_start
 
     if cur_group:
         groups.append(cur_group)
 
     # ---- Build final SRT entries with timing ----
     final: List[SrtEntry] = []
-    n_chars = len(char_starts)
 
     for group in groups:
         first_cs = group[0][0]
@@ -318,7 +339,7 @@ def _process_srt_entries(
         return "", 0
 
     MAX_ENTRY_DURATION = 8.0  # seconds — hard cap per subtitle entry
-    MAX_CHARS_PER_SEC = 2.0   # chars/sec threshold — below this is likely hallucination
+    MAX_CHARS_PER_SEC = 3.0   # chars/sec threshold — below this is likely hallucination
 
     # Collect all clauses with their original timing info
     # Each item: (start_time, end_time, clause_text)
@@ -332,12 +353,17 @@ def _process_srt_entries(
         entry_dur = entry.end - entry.start
 
         # Skip entries that are likely hallucinations:
-        # very few characters spanning a very long time
+        # 1. very few characters spanning a very long time
+        # 2. text has very low unique character ratio (repeating gibberish like "A A a a sue")
         if entry_dur > 10.0:
             chars = len(text.strip())
             density = chars / entry_dur  # chars per second
             if density < MAX_CHARS_PER_SEC:
-                continue  # skip hallucinated/empty-music segments
+                continue
+            # Check for repetitive gibberish: if unique chars < 40% of total, it's likely noise
+            unique_chars = len(set(text.strip()))
+            if chars > 3 and unique_chars / chars < 0.4:
+                continue
 
         # Split by punctuation
         clauses = _split_by_punctuation(text)
