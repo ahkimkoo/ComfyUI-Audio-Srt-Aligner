@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pt
+output/
+*.egg-info/
+dist/
+build/
+.venv/
+.env
+fonts/
