@@ -351,6 +351,10 @@ def transcribe_to_tokens(
         beam_size=beam_size,
         word_timestamps=True,
         vad_filter=True,
+        condition_on_previous_text=False,
+        compression_ratio_threshold=2.4,
+        logprob_threshold=-1.0,
+        no_speech_threshold=0.6,
     )
 
     timed_tokens: List[TimedToken] = []
@@ -469,6 +473,10 @@ def transcribe_to_timed_subtitles(
         beam_size=beam_size,
         word_timestamps=True,
         vad_filter=True,
+        condition_on_previous_text=False,
+        compression_ratio_threshold=2.4,
+        logprob_threshold=-1.0,
+        no_speech_threshold=0.6,
     )
 
     entries: List[TimedSubtitleEntry] = []
