@@ -257,12 +257,12 @@ class VideoSrtOverlay:
                 "images": ("IMAGE",),
                 "srt_string": ("STRING", {"multiline": True, "default": ""}),
                 "font_family": (font_list if font_list else [""], {"default": font_list[0] if font_list else ""}),
-                "font_size": ("INT", {"default": 48, "min": 12, "max": 200, "step": 1}),
+                "font_size": ("INT", {"default": 120, "min": 12, "max": 200, "step": 1}),
                 "font_color": ("STRING", {"default": "#FFFFFF", "multiline": False}),
                 "border_color": ("STRING", {"default": "#000000", "multiline": False}),
                 "border_size": ("INT", {"default": 2, "min": 0, "max": 20, "step": 1}),
                 "shadow_color": ("STRING", {"default": "#000000", "multiline": False}),
-                "shadow_size": ("INT", {"default": 3, "min": 0, "max": 20, "step": 1}),
+                "shadow_size": ("INT", {"default": 2, "min": 0, "max": 20, "step": 1}),
                 "shadow_offset_x": ("INT", {"default": 2, "min": -20, "max": 20, "step": 1}),
                 "shadow_offset_y": ("INT", {"default": 2, "min": -20, "max": 20, "step": 1}),
                 "effect": (["fade", "none"], {"default": "fade"}),
@@ -271,10 +271,10 @@ class VideoSrtOverlay:
             },
             "optional": {
                 "subtitle_y_position": (
-                    "FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.01, "display": "number"},
+                    "FLOAT", {"default": 0.70, "min": 0.0, "max": 1.0, "step": 0.01, "display": "number"},
                 ),
                 "subtitle_x_margin": (
-                    "FLOAT", {"default": 0.3, "min": 0.0, "max": 0.5, "step": 0.01, "display": "number"},
+                    "FLOAT", {"default": 0.20, "min": 0.0, "max": 0.5, "step": 0.01, "display": "number"},
                 ),
                 "fps": (
                     "FLOAT", {"default": 24.0, "min": 1.0, "max": 120.0, "step": 0.1, "display": "number"},

@@ -80,19 +80,19 @@ LoadAudio → AudioSrtAligner → VideoSrtOverlay → Preview/Save
 | `images` | IMAGE | 是 | — | 视频帧批次 (B, H, W, C) |
 | `srt_string` | STRING | 是 | — | SRT 字幕内容 |
 | `font_family` | COMBO | 是 | — | 字体下拉选择，自动聚合 `fonts/` 和 `models/fonts/` 下的字体 |
-| `font_size` | INT | 否 | 48 | 字体大小（12-200） |
+| `font_size` | INT | 否 | `120` | 字体大小（12-200） |
 | `font_color` | STRING | 否 | `#FFFFFF` | 字体颜色（十六进制） |
 | `border_color` | STRING | 否 | `#000000` | 描边颜色 |
 | `border_size` | INT | 否 | 2 | 描边宽度（0-20） |
 | `shadow_color` | STRING | 否 | `#000000` | 阴影颜色 |
-| `shadow_size` | INT | 否 | 3 | 阴影模糊半径（0-20） |
+| `shadow_size` | INT | 否 | `2` | 阴影模糊半径（0-20） |
 | `shadow_offset_x` | INT | 否 | 2 | 阴影 X 偏移（-20~20） |
 | `shadow_offset_y` | INT | 否 | 2 | 阴影 Y 偏移（-20~20） |
 | `effect` | COMBO | 否 | `fade` | 特效：fade（淡入淡出）、none |
 | `fade_in_duration` | INT | 否 | 300 | 淡入时长（ms，0-2000） |
 | `fade_out_duration` | INT | 否 | 300 | 淡出时长（ms，0-2000） |
-| `subtitle_y_position` | FLOAT | 否 | 0.3 | 字幕垂直位置（0.0=顶部，1.0=底部） |
-| `subtitle_x_margin` | FLOAT | 否 | 0.1 | 水平总留白比例（0.0~0.5），控制长文字自动折行宽度 |
+| `subtitle_y_position` | FLOAT | 否 | `0.70` | 字幕垂直位置（0.0=顶部，1.0=底部） |
+| `subtitle_x_margin` | FLOAT | 否 | `0.20` | 水平总留白比例（0.0~0.5），控制长文字自动折行宽度 |
 | `fps` | FLOAT | 否 | 24.0 | 视频帧率 |
 
 ### 输出
