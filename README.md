@@ -80,7 +80,7 @@ LoadAudio → AudioSrtAligner → VideoSrtOverlay → Preview/Save
 | `images` | IMAGE | 是 | — | 视频帧批次 (B, H, W, C) |
 | `srt_string` | STRING | 是 | — | SRT 字幕内容 |
 | `font_family` | COMBO | 是 | — | 字体下拉选择，自动聚合 `fonts/` 和 `models/fonts/` 下的字体 |
-| `font_size` | INT | 否 | `120` | 字体大小（12-200） |
+| `font_size` | INT | 否 | `80` | 字体大小（12-200） |
 | `font_color` | STRING | 否 | `#FFFFFF` | 字体颜色（十六进制） |
 | `border_color` | STRING | 否 | `#000000` | 描边颜色 |
 | `border_size` | INT | 否 | 2 | 描边宽度（0-20） |

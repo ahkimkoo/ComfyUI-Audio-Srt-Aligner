@@ -257,7 +257,7 @@ class VideoSrtOverlay:
                 "images": ("IMAGE",),
                 "srt_string": ("STRING", {"multiline": True, "default": ""}),
                 "font_family": (font_list if font_list else [""], {"default": font_list[0] if font_list else ""}),
-                "font_size": ("INT", {"default": 120, "min": 12, "max": 200, "step": 1}),
+                "font_size": ("INT", {"default": 80, "min": 12, "max": 200, "step": 1}),
                 "font_color": ("STRING", {"default": "#FFFFFF", "multiline": False}),
                 "border_color": ("STRING", {"default": "#000000", "multiline": False}),
                 "border_size": ("INT", {"default": 2, "min": 0, "max": 20, "step": 1}),
