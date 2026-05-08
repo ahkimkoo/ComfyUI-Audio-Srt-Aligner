@@ -367,6 +367,20 @@ def transcribe_to_tokens(
             progress(f"ASR progress: processed segments = {seg_count}")
         seg_start = float(segment.start or audio_end)
         seg_end = float(segment.end or seg_start)
+
+        seg_text = (segment.text or "").strip()
+        seg_dur = seg_end - seg_start
+
+        # Filter out hallucinated segments (critical for alignment quality):
+        # - Very low text density (few chars per second) indicates gibberish
+        # - Very repetitive text (low unique char ratio) indicates looping
+        if seg_dur > 5.0 and seg_text:
+            chars = len(seg_text)
+            density = chars / seg_dur
+            unique_ratio = len(set(seg_text)) / chars if chars > 2 else 1.0
+            if density < 1.5 or unique_ratio < 0.4:
+                continue
+
         audio_end = max(audio_end, seg_end)
 
         if segment.words:
