@@ -1,83 +1,22 @@
 {
   "id": "94dca699-4678-4600-b46d-69a7ff16338e",
   "revision": 0,
-  "last_node_id": 14,
-  "last_link_id": 22,
+  "last_node_id": 26,
+  "last_link_id": 47,
   "nodes": [
-    {
-      "id": 1,
-      "type": "AudioSrtAligner",
-      "pos": [
-        189.9443942966548,
-        -137.09576249228516
-      ],
-      "size": [
-        400,
-        450
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "audio",
-          "type": "AUDIO",
-          "link": 15
-        }
-      ],
-      "outputs": [
-        {
-          "name": "srt_string",
-          "type": "STRING",
-          "links": [
-            2,
-            11
-          ]
-        },
-        {
-          "name": "detected_language",
-          "type": "STRING",
-          "links": null
-        },
-        {
-          "name": "srt_entries",
-          "type": "INT",
-          "links": null
-        },
-        {
-          "name": "coverage",
-          "type": "FLOAT",
-          "links": null
-        }
-      ],
-      "title": "Audio SRT Aligner（文稿校对字幕）",
-      "properties": {
-        "Node name for S&R": "AudioSrtAligner"
-      },
-      "widgets_values": [
-        "今天天气真好，阳光明媚，微风轻轻吹过脸庞。我们一起去公园散步吧，那里有清澈的湖水，有盛开的花朵，还有高大的树木。你可以看到老人们在打太极拳，孩子们在草地上追逐嬉戏，年轻人在湖边跑步锻炼。公园的每个角落都充满了生机和活力。走累了，我们就在长椅上坐下来，喝杯茶，聊聊天，享受这美好的午后时光。生活就是这样，平凡却充满温暖。",
-        "small",
-        "zh",
-        5,
-        12,
-        "int8"
-      ],
-      "color": "#233",
-      "bgcolor": "#353"
-    },
     {
       "id": 13,
       "type": "VHS_VideoInfo",
       "pos": [
-        167.83223885813678,
-        376.8151672046493
+        -22.556693042201648,
+        428.59431905367853
       ],
       "size": [
         233.455078125,
         206
       ],
       "flags": {},
-      "order": 2,
+      "order": 3,
       "mode": 0,
       "inputs": [
         {
@@ -116,8 +55,8 @@
           "name": "loaded_fps🟦",
           "type": "FLOAT",
           "links": [
-            19,
-            20
+            20,
+            29
           ]
         },
         {
@@ -152,12 +91,12 @@
       "id": 11,
       "type": "VHS_LoadVideo",
       "pos": [
-        -141.60911158829106,
-        -138.3123651614216
+        -376.6217810595102,
+        -65.52780344943018
       ],
       "size": [
         260.4306640625,
-        751.7662231445313
+        310
       ],
       "flags": {},
       "order": 0,
@@ -181,7 +120,7 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            16
+            27
           ]
         },
         {
@@ -193,8 +132,8 @@
           "name": "audio",
           "type": "AUDIO",
           "links": [
-            15,
-            21
+            21,
+            35
           ]
         },
         {
@@ -211,9 +150,9 @@
         "Node name for S&R": "VHS_LoadVideo"
       },
       "widgets_values": {
-        "video": "taas.mp4",
-        "force_rate": 0,
-        "custom_width": 0,
+        "video": "combined_132116_44705.mp4",
+        "force_rate": 16,
+        "custom_width": 480,
         "custom_height": 0,
         "frame_load_cap": 0,
         "skip_first_frames": 0,
@@ -223,10 +162,10 @@
           "hidden": false,
           "paused": false,
           "params": {
-            "filename": "taas.mp4",
+            "filename": "combined_132116_44705.mp4",
             "type": "input",
             "format": "video/mp4",
-            "force_rate": 0,
+            "force_rate": 16,
             "custom_width": 0,
             "custom_height": 0,
             "frame_load_cap": 0,
@@ -237,65 +176,24 @@
       }
     },
     {
-      "id": 3,
-      "type": "Light-Tool: ShowText",
-      "pos": [
-        645.7490751132789,
-        16.34106344262671
-      ],
-      "size": [
-        500,
-        350
-      ],
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "text",
-          "type": "*",
-          "link": 2
-        }
-      ],
-      "outputs": [
-        {
-          "name": "text",
-          "shape": 6,
-          "type": "STRING",
-          "links": null
-        }
-      ],
-      "title": "预览 SRT 字幕",
-      "properties": {
-        "cnr_id": "comfyui-light-tool",
-        "ver": "1.4.9",
-        "Node name for S&R": "Light-Tool: ShowText"
-      },
-      "widgets_values": [
-        "1\n00:00:00,270 --> 00:00:02,787\n今天天气真好 阳光明媚\n\n2\n00:00:02,787 --> 00:00:04,800\n微风轻轻吹过脸庞\n\n3\n00:00:05,320 --> 00:00:07,270\n我们一起去公园散步吧\n\n4\n00:00:07,580 --> 00:00:09,294\n那里有清澈的湖水\n\n5\n00:00:09,294 --> 00:00:10,580\n有盛开的花朵\n\n6\n00:00:10,720 --> 00:00:12,060\n还有高大的树木\n\n7\n00:00:12,600 --> 00:00:14,003\n你可以看到老人们\n\n8\n00:00:14,003 --> 00:00:14,880\n在打太极拳\n\n9\n00:00:15,620 --> 00:00:17,300\n孩子们在草地上追逐嬉戏\n\n10\n00:00:18,280 --> 00:00:20,940\n年轻人在湖边跑步锻炼\n\n11\n00:00:21,140 --> 00:00:22,745\n公园的每个角落都\n\n12\n00:00:22,745 --> 00:00:24,350\n充满了生机和活力\n\n13\n00:00:24,920 --> 00:00:25,646\n走累了\n\n14\n00:00:25,646 --> 00:00:28,067\n我们就在长椅上坐下来\n\n15\n00:00:28,067 --> 00:00:29,520\n喝杯茶 聊聊天\n\n16\n00:00:29,810 --> 00:00:31,760\n享受这美好的午后时光\n\n17\n00:00:32,340 --> 00:00:33,798\n生活就是这样\n\n18\n00:00:33,798 --> 00:00:35,500\n平凡却充满温暖\n"
-      ],
-      "color": "#322",
-      "bgcolor": "#533"
-    },
-    {
       "id": 8,
       "type": "VHS_VideoCombine",
       "pos": [
-        1848.033163162675,
-        -140.09898892316977
+        1851.6420533328198,
+        -66.03828630107023
       ],
       "size": [
         330.3051618303575,
-        899.6536210317468
+        911.7210439918161
       ],
       "flags": {},
-      "order": 5,
-      "mode": 0,
+      "order": 8,
+      "mode": 4,
       "inputs": [
         {
           "name": "images",
           "type": "IMAGE",
-          "link": 13
+          "link": 30
         },
         {
           "name": "audio",
@@ -351,36 +249,36 @@
           "hidden": false,
           "paused": false,
           "params": {
-            "filename": "AnimateDiff_00020-audio.mp4",
+            "filename": "AnimateDiff_00024-audio.mp4",
             "subfolder": "",
             "type": "output",
             "format": "video/h264-mp4",
-            "frame_rate": 30,
-            "workflow": "AnimateDiff_00020.png",
-            "fullpath": "/Users/cherokee/App/ComfyUI/output/AnimateDiff_00020-audio.mp4"
+            "frame_rate": 16,
+            "workflow": "AnimateDiff_00024.png",
+            "fullpath": "/Users/cherokee/App/ComfyUI/output/AnimateDiff_00024-audio.mp4"
           }
         }
       }
     },
     {
-      "id": 10,
+      "id": 16,
       "type": "VideoSrtOverlay",
       "pos": [
-        1315.4307887809418,
-        -34.344544959906024
+        1319.0396789510867,
+        39.71615766219352
       ],
       "size": [
-        330.92639913382027,
+        400,
         448
       ],
       "flags": {},
-      "order": 4,
-      "mode": 0,
+      "order": 6,
+      "mode": 4,
       "inputs": [
         {
           "name": "images",
           "type": "IMAGE",
-          "link": 16
+          "link": 27
         },
         {
           "name": "srt_string",
@@ -388,7 +286,7 @@
           "widget": {
             "name": "srt_string"
           },
-          "link": 11
+          "link": 46
         },
         {
           "name": "fps",
@@ -397,7 +295,7 @@
           "widget": {
             "name": "fps"
           },
-          "link": 19
+          "link": 29
         }
       ],
       "outputs": [
@@ -405,18 +303,19 @@
           "name": "images_with_subtitle",
           "type": "IMAGE",
           "links": [
-            13
+            30
           ]
         }
       ],
-      "title": "Video SRT Overlay（字幕合成）",
       "properties": {
+        "aux_id": "ahkimkoo/ComfyUI-Audio-Srt-Aligner",
+        "ver": "b6d6dc0624e461d18c0267281e99a547b0fa8c27",
         "Node name for S&R": "VideoSrtOverlay"
       },
       "widgets_values": [
         "",
         "Alibaba-PuHuiTi-Medium.otf",
-        120,
+        50,
         "#FFFFFF",
         "#000000",
         2,
@@ -430,52 +329,239 @@
         0.7,
         0.2,
         24
+      ]
+    },
+    {
+      "id": 21,
+      "type": "Fast Groups Bypasser (rgthree)",
+      "pos": [
+        -380.5889651994336,
+        -276.75414663665276
       ],
-      "color": "#223",
-      "bgcolor": "#335"
+      "size": [
+        453.1411246045416,
+        103.43363239493556
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "OPT_CONNECTION",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "matchColors": "",
+        "matchTitle": "",
+        "showNav": true,
+        "showAllGraphs": true,
+        "sort": "position",
+        "customSortAlphabet": "",
+        "toggleRestriction": "default"
+      }
+    },
+    {
+      "id": 22,
+      "type": "AudioSeparation",
+      "pos": [
+        -24.833106725717943,
+        64.1364039774202
+      ],
+      "size": [
+        270,
+        166
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 35
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Bass",
+          "type": "AUDIO",
+          "links": null
+        },
+        {
+          "name": "Drums",
+          "type": "AUDIO",
+          "links": null
+        },
+        {
+          "name": "Other",
+          "type": "AUDIO",
+          "links": null
+        },
+        {
+          "name": "Vocals",
+          "type": "AUDIO",
+          "links": [
+            44
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "audio-separation-nodes-comfyui",
+        "ver": "2.0.0",
+        "Node name for S&R": "AudioSeparation"
+      },
+      "widgets_values": [
+        "linear",
+        10,
+        0.1
+      ]
+    },
+    {
+      "id": 3,
+      "type": "Light-Tool: ShowText",
+      "pos": [
+        769.9468944396408,
+        -65.51715199090795
+      ],
+      "size": [
+        416.5045016660272,
+        920.4749731370053
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "*",
+          "link": 45
+        }
+      ],
+      "outputs": [
+        {
+          "name": "text",
+          "shape": 6,
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "预览 SRT 字幕",
+      "properties": {
+        "cnr_id": "comfyui-light-tool",
+        "ver": "1.4.9",
+        "Node name for S&R": "Light-Tool: ShowText"
+      },
+      "widgets_values": [
+        "1\n00:00:39,340 --> 00:00:41,060\n咿呀 阿苏耶\n\n2\n00:00:41,400 --> 00:00:47,880\n银针绣入黎明的雾\n\n3\n00:00:48,880 --> 00:00:51,350\n彩线缝补岁月的路\n\n4\n00:00:52,170 --> 00:00:55,400\n太阳历书翻动沉睡的史诗\n\n5\n00:00:55,610 --> 00:00:58,310\n我们在虎脊背上画出蓝图\n\n6\n00:00:59,140 --> 00:01:02,120\n莫问远古的秘密传给谁\n\n7\n00:01:02,180 --> 00:01:05,070\n你看那羊角纹里绽放繁华\n\n8\n00:01:06,440 --> 00:01:09,290\n火塘煨香苦涩的茶\n\n9\n00:01:09,860 --> 00:01:12,750\n汗水洗净额头的疤\n\n10\n00:01:12,930 --> 00:01:16,070\n我不问你从哪片谷底走出来\n\n11\n00:01:16,100 --> 00:01:18,690\n只要弦子柔拨动了牵挂\n\n12\n00:01:18,720 --> 00:01:22,910\n莫说这一生还要走多远\n\n13\n00:01:22,940 --> 00:01:27,700\n只要火不熄灭心就有家\n\n14\n00:01:27,730 --> 00:01:28,628\n哎阿苏耶\n\n15\n00:01:32,800 --> 00:01:36,390\n不需要剧本不需要沉默\n\n16\n00:01:36,420 --> 00:01:37,140\n哎阿苏耶\n\n17\n00:01:39,730 --> 00:01:43,200\n把胸口的灰烬统统抖落\n\n18\n00:01:43,260 --> 00:01:46,625\n听弦子在响 左脚踩\n\n19\n00:01:47,520 --> 00:01:52,345\n右脚跳 大地的脉搏缓缓摇\n\n20\n00:01:52,405 --> 00:01:55,062\n弦子柔 调子高\n\n21\n00:01:55,500 --> 00:01:59,120\n灵魂在晚霞里轻声欢笑\n\n22\n00:01:59,180 --> 00:02:02,640\n火把吻过了众山的腰\n\n23\n00:02:50,580 --> 00:02:53,670\n一路火光一路歌谣\n\n24\n00:02:59,640 --> 00:03:04,920\n阿苏耶 火不熄 歌不老\n"
+      ],
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 23,
+      "type": "PreviewAudio",
+      "pos": [
+        291.4719131282987,
+        589.7001166734623
+      ],
+      "size": [
+        445.9667481343206,
+        120.81763573002104
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 47
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.20.1",
+        "Node name for S&R": "PreviewAudio"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 26,
+      "type": "AudioSrtAligner",
+      "pos": [
+        296.23227853876176,
+        -37.424837524770034
+      ],
+      "size": [
+        436.45326595022857,
+        459.4565171224658
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 44
+        }
+      ],
+      "outputs": [
+        {
+          "name": "srt_string",
+          "type": "STRING",
+          "links": [
+            45,
+            46
+          ]
+        },
+        {
+          "name": "detected_language",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "srt_entries",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "name": "coverage",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "audio_out",
+          "type": "AUDIO",
+          "links": [
+            47
+          ]
+        }
+      ],
+      "title": "Audio SRT Aligner（文稿校对字幕）",
+      "properties": {
+        "aux_id": "ahkimkoo/ComfyUI-Audio-Srt-Aligner",
+        "ver": "ce47a16e76b4e37a25c32bb1dd3ea2cb81529bed",
+        "Node name for S&R": "AudioSrtAligner"
+      },
+      "widgets_values": [
+        "咿呀\n阿苏耶\n\n银针绣入黎明的雾\n彩线缝补岁月的路\n太阳历书翻动沉睡的史诗\n我们在虎脊背上画出蓝图\n莫问远古的秘密传给谁\n你看那羊角纹里绽放繁华\n\n火塘煨香苦涩的茶\n汗水洗净额头的疤\n我不问你从哪片谷底走出来\n只要弦子柔拨动了牵挂\n莫说这一生还要走多远\n只要火不熄灭心就有家\n\n哎阿苏耶\n不需要剧本不需要沉默\n哎阿苏耶\n把胸口的灰烬统统抖落\n听弦子在响\n\n左脚踩！右脚跳！\n大地的脉搏缓缓摇。\n弦子柔！调子高！\n灵魂在晚霞里轻声欢笑。\n火把吻过了众山的腰\n一路火光一路歌谣。\n\n黑虎巡山守在每一个胸口\n金色太阳映在我们的背后\n千年咕遮停不下的节奏\n端起杆杆酒敬天地敬不朽。\n\n左脚踩！右脚跳！\n一圈一圈别迟到。\n调子暖！意境傲！\n云散日出就在今朝。\n万把红火连成飞天的龙\n一路火光一路歌谣。\n\n阿苏耶……\n火不熄。\n歌不老。",
+        "small",
+        "zh",
+        5,
+        12,
+        "int8",
+        "none"
+      ],
+      "color": "#233",
+      "bgcolor": "#353"
     }
   ],
   "links": [
-    [
-      2,
-      1,
-      0,
-      3,
-      0,
-      "STRING"
-    ],
-    [
-      11,
-      1,
-      0,
-      10,
-      1,
-      "STRING"
-    ],
-    [
-      13,
-      10,
-      0,
-      8,
-      0,
-      "IMAGE"
-    ],
-    [
-      15,
-      11,
-      2,
-      1,
-      0,
-      "AUDIO"
-    ],
-    [
-      16,
-      11,
-      0,
-      10,
-      0,
-      "IMAGE"
-    ],
     [
       18,
       11,
@@ -483,14 +569,6 @@
       13,
       0,
       "VHS_VIDEOINFO"
-    ],
-    [
-      19,
-      13,
-      5,
-      10,
-      2,
-      "FLOAT"
     ],
     [
       20,
@@ -507,6 +585,70 @@
       8,
       1,
       "AUDIO"
+    ],
+    [
+      27,
+      11,
+      0,
+      16,
+      0,
+      "IMAGE"
+    ],
+    [
+      29,
+      13,
+      5,
+      16,
+      2,
+      "FLOAT"
+    ],
+    [
+      30,
+      16,
+      0,
+      8,
+      0,
+      "IMAGE"
+    ],
+    [
+      35,
+      11,
+      2,
+      22,
+      0,
+      "AUDIO"
+    ],
+    [
+      44,
+      22,
+      3,
+      26,
+      0,
+      "AUDIO"
+    ],
+    [
+      45,
+      26,
+      0,
+      3,
+      0,
+      "STRING"
+    ],
+    [
+      46,
+      26,
+      0,
+      16,
+      1,
+      "STRING"
+    ],
+    [
+      47,
+      26,
+      4,
+      23,
+      0,
+      "AUDIO"
     ]
   ],
   "groups": [
@@ -514,10 +656,10 @@
       "id": 1,
       "title": "文稿校对字幕生成",
       "bounding": [
-        -151.60911158829106,
-        -211.91236516142155,
-        1330.0206559869084,
-        835.3662231445313
+        -386.6217810595101,
+        -145.25516138317687,
+        1589.569340022991,
+        1004.0749731370053
       ],
       "color": "#3f789e",
       "font_size": 24,
@@ -527,8 +669,8 @@
       "id": 2,
       "title": "阶段二：字幕合成到图像",
       "bounding": [
-        1261.2976367421663,
-        -215.47184857761692,
+        1264.9065269123112,
+        -141.41114595551738,
         1032.3458346987393,
         1014.4111200162257
       ],
@@ -540,10 +682,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.522797497582023,
+      "scale": 0.8419705978308252,
       "offset": [
-        555.8652046569148,
-        607.6206843309878
+        330.59596236970526,
+        136.80522854677304
       ]
     },
     "frontendVersion": "1.42.15",
