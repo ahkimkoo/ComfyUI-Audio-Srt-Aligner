@@ -1,0 +1,23 @@
+[project]
+name = "ComfyUI-Audio-Srt-Aligner"
+version = "1.0.0"
+description = "Word-level audio-text alignment using LIS anchor + SequenceMatcher. Generates precise SRT subtitles from audio with optional reference text proofreading, built-in UVR5 vocal separation, and video subtitle overlay rendering."
+license = { file = "LICENSE" }
+dependencies = [
+    "faster-whisper>=1.1.0",
+    "numpy",
+    "Pillow>=10.0.0",
+    "av>=10.0.0",
+    "audio-separator>=0.44.0",
+]
+classifiers = [
+    "Operating System :: OS Independent",
+    "Environment :: GPU :: NVIDIA CUDA",
+]
+
+[project.urls]
+Repository = "https://github.com/ahkimkoo/ComfyUI-Audio-Srt-Aligner"
+
+[tool.comfy]
+PublisherId = "ahkimkoo"
+DisplayName = "ComfyUI-Audio-Srt-Aligner"
