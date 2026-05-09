@@ -100,6 +100,7 @@ class AlignmentConfig:
     anchor_min_voice: float
     onset_lookahead: float
     tail_end_guard: float
+    uvr5_mode: str = "roformer"
 
 
 @dataclass
@@ -155,6 +156,7 @@ def create_alignment_config(
     anchor_min_voice: float = 0.28,
     onset_lookahead: float = 1.20,
     tail_end_guard: float = 0.08,
+    uvr5_mode: str = "roformer",
 ) -> AlignmentConfig:
     """Create an AlignmentConfig with explicit parameters.
 
@@ -179,6 +181,7 @@ def create_alignment_config(
         anchor_min_voice=max(0.06, anchor_min_voice),
         onset_lookahead=max(0.10, onset_lookahead),
         tail_end_guard=max(0.0, tail_end_guard),
+        uvr5_mode=uvr5_mode,
     )
 
 
@@ -337,7 +340,24 @@ def transcribe_to_tokens(
     language: Optional[str],
     beam_size: int,
     progress: Optional[Callable[[str], None]] = None,
+    uvr5_mode: str = "none",
 ) -> Tuple[List[TimedToken], float, Optional[str]]:
+    # Step 0: UVR5 vocal separation (optional)
+    working_audio_path = audio_path
+    if uvr5_mode and uvr5_mode != "none":
+        from aligner.uvr5_separator import separate_vocals, resolve_uvr5_model
+        model_filename = resolve_uvr5_model(uvr5_mode)
+        if not model_filename:
+            raise ValueError(f"Unknown UVR5 mode: {uvr5_mode}")
+        if progress:
+            progress("[AudioSrtAligner] Running UVR5 vocal separation...")
+        vocals_path = separate_vocals(
+            audio_path=str(audio_path),
+            model_filename=model_filename,
+            progress=progress,
+        )
+        working_audio_path = Path(vocals_path)
+
     model_source = resolve_model_source(model_name)
     if progress:
         progress(f"Loading Whisper model: {model_source} ({device}/{compute_type})")
@@ -346,7 +366,7 @@ def transcribe_to_tokens(
     if progress:
         progress("Transcribing audio to token timestamps (first run may download model).")
     segments, info = model.transcribe(
-        str(audio_path),
+        str(working_audio_path),
         language=language,
         beam_size=beam_size,
         word_timestamps=True,
@@ -473,7 +493,24 @@ def transcribe_to_timed_subtitles(
     language: Optional[str],
     beam_size: int,
     progress: Optional[Callable[[str], None]] = None,
+    uvr5_mode: str = "none",
 ) -> Tuple[List[TimedSubtitleEntry], float, Optional[str], int]:
+    # Step 0: UVR5 vocal separation (optional)
+    working_audio_path = audio_path
+    if uvr5_mode and uvr5_mode != "none":
+        from aligner.uvr5_separator import separate_vocals, resolve_uvr5_model
+        model_filename = resolve_uvr5_model(uvr5_mode)
+        if not model_filename:
+            raise ValueError(f"Unknown UVR5 mode: {uvr5_mode}")
+        if progress:
+            progress("[AudioSrtAligner] Running UVR5 vocal separation...")
+        vocals_path = separate_vocals(
+            audio_path=str(audio_path),
+            model_filename=model_filename,
+            progress=progress,
+        )
+        working_audio_path = Path(vocals_path)
+
     model_source = resolve_model_source(model_name)
     if progress:
         progress(f"Loading Whisper model: {model_source} ({device}/{compute_type})")
@@ -482,7 +519,7 @@ def transcribe_to_timed_subtitles(
     if progress:
         progress("Transcribing audio to subtitle segments (first run may download model).")
     segments, info = model.transcribe(
-        str(audio_path),
+        str(working_audio_path),
         language=language,
         beam_size=beam_size,
         word_timestamps=True,
@@ -1350,6 +1387,7 @@ def run_alignment_pipeline(
         language=config.language,
         beam_size=config.beam_size,
         progress=progress,
+        uvr5_mode=config.uvr5_mode,
     )
     if not asr_tokens:
         raise ValueError("Failed to obtain timed tokens from audio.")
@@ -1442,6 +1480,7 @@ def run_auto_subtitle_pipeline(
         language=config.language,
         beam_size=config.beam_size,
         progress=progress,
+        uvr5_mode=config.uvr5_mode,
     )
     if not raw_entries:
         raise ValueError("Failed to produce subtitles from audio.")

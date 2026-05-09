@@ -41,6 +41,15 @@ else:
     # Fallback for standalone testing
     from utils.srt_parser import SrtEntry, parse_srt, format_srt
 
+_uvr5_module = sys.modules.get("audio_srt_aligner_aligner_uvr5_separator")
+if _uvr5_module is not None:
+    UVR5_MODE_OPTIONS = _uvr5_module.UVR5_MODE_OPTIONS
+else:
+    _plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if _plugin_root not in sys.path:
+        sys.path.insert(0, _plugin_root)
+    from aligner.uvr5_separator import UVR5_MODE_OPTIONS
+
 # ---------------------------------------------------------------------------
 # Whisper model directory — tell faster-whisper where to find local models
 # ---------------------------------------------------------------------------
@@ -571,6 +580,7 @@ class AudioSrtAligner:
                     ["int8", "int8_float16", "float16", "float32"],
                     {"default": "int8"},
                 ),
+                "uvr5_mode": (UVR5_MODE_OPTIONS, {"default": "roformer"}),
             },
         }
 
@@ -589,6 +599,7 @@ class AudioSrtAligner:
         beam_size: int = 5,
         max_chars: int = 12,
         compute_type: str = "int8",
+        uvr5_mode: str = "roformer",
     ) -> Tuple[str, str, int, float]:
         """Run alignment pipeline and return SRT content."""
         # --- Validate inputs ---
@@ -612,6 +623,7 @@ class AudioSrtAligner:
             compute_type=compute_type,
             language=resolved_language,
             beam_size=beam_size,
+            uvr5_mode=uvr5_mode,
         )
 
         # --- Run alignment or raw transcription ---
