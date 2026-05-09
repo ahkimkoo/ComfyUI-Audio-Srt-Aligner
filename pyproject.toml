@@ -1,6 +1,6 @@
 [project]
 name = "ComfyUI-Audio-Srt-Aligner"
-version = "1.0.0"
+version = "1.0.1"
 description = "Word-level audio-text alignment using LIS anchor + SequenceMatcher. Generates precise SRT subtitles from audio with optional reference text proofreading, built-in UVR5 vocal separation, and video subtitle overlay rendering."
 license = { file = "LICENSE" }
 dependencies = [

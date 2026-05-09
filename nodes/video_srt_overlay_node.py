@@ -442,8 +442,8 @@ class VideoSrtOverlay:
         if not frame_plan:
             return (images,)
 
-        # --- Composite: one torch alpha-blend per subtitle frame ---
-        result = images.clone()
+        # --- Composite: in-place alpha-blend to avoid doubling memory ---
+        result = images
 
         for fidx, g_start, g_end, g_text in frame_plan:
             rgba, px, py = pre_rendered[g_text]
