@@ -2,11 +2,14 @@
 
 基于 faster-whisper 的词级时间戳，将音频与参考文本对齐，自动生成精确时间戳的 SRT 字幕，并可将字幕渲染合成到视频画面上。
 
+**核心算法**：采用 LIS 锚点 + SequenceMatcher 文本级对齐，不依赖 Wav2Vec2 音素模型，依赖极少、速度极快。详见[对齐算法说明](#对齐算法lis-锚点--sequencematcher)。
+
 ## 功能特性
 
 - **AudioSrtAligner (文稿校对字幕)** — 将音频转换为 SRT 字幕。**参考文本为可选项**：
   - **填写参考文本**：将参考文本/台词文稿与音频对齐，生成带精确时间戳的校对后字幕
   - **留空参考文本**：直接使用 Whisper 语音识别原始结果，无需文稿校对
+  - **内置 UVR5 声学分离**：可选 Roformer 或 MDX 模型自动分离人声与伴奏，分离后的人声可通过 `audio_out` 输出
   - 支持中英文等多种语言，自动检测语言
   - 支持字幕最大字数限制与智能分词切分
   - 支持按标点符号切分，句中标点替换为空格，句末标点移除
@@ -39,8 +42,10 @@ pip install -r requirements.txt
 
 ```
 LoadAudio → AudioSrtAligner → VideoSrtOverlay → Preview/Save
-              ↑                    ↑
-         reference_text       images (视频帧)
+               ↑                    ↑
+          reference_text       images (视频帧)
+               ↓
+          audio_out (分离后的人声)
 ```
 
 ---
@@ -60,6 +65,7 @@ LoadAudio → AudioSrtAligner → VideoSrtOverlay → Preview/Save
 | `beam_size` | INT | 否 | `5` | 1-10 | Beam search 大小。值越大识别结果越稳定但速度越慢 |
 | `max_chars` | INT | 否 | `12` | 1-100 | 每行字幕最大字数限制。超出时按中文分词边界自动切分，句中标点替换为空格 |
 | `compute_type` | COMBO | 否 | `int8` | `int8`/`int8_float16`/`float16`/`float32` | 计算精度。`int8` 速度最快；Apple Silicon 建议用 `int8` 而非 `float16` |
+| `uvr5_mode` | COMBO | 否 | `roformer` | `roformer`/`mdxnet`/`none` | **声学分离模式**。自动分离人声与伴奏后再做字幕对齐。`roformer`=高质量（BS-Roformer，SDR 12.9），`mdxnet`=速度快（MDX KARA_2），`none`=不做分离直接用原始音频 |
 
 ### 输出参数
 
@@ -69,6 +75,7 @@ LoadAudio → AudioSrtAligner → VideoSrtOverlay → Preview/Save
 | `detected_language` | STRING | 语言代码如 `zh`、`en` | Whisper 检测到的语言代码 |
 | `srt_entries` | INT | 正整数 | SRT 字幕条目数量（行数） |
 | `coverage` | FLOAT | 0.0-1.0 | **仅校对模式有效**。对齐覆盖率，表示参考文本与音频的匹配程度 |
+| `audio_out` | AUDIO | ComfyUI AUDIO 类型 | **UVR5 分离后的人声音频**（`uvr5_mode=none` 时为原始音频）。可通过 SaveAudio 等节点保存，或连接到其他音频处理节点 |
 
 ### 工作模式说明
 
@@ -190,6 +197,7 @@ LoadAudio → AudioSrtAligner → VideoSrtOverlay → Preview/Save
 ## 依赖
 
 - `faster-whisper>=1.1.0` — Whisper 语音识别引擎
+- `audio-separator[gpu]>=0.44.0` — UVR5 声学分离（Roformer/MDX 模型），`uvr5_mode=none` 时可不装
 - `numpy` — 数值计算
 - `Pillow>=10.0.0` — 图像处理与字幕渲染
 - `av>=10.0.0` — 音频解码
@@ -222,6 +230,87 @@ LoadAudio → AudioSrtAligner → VideoSrtOverlay → Preview/Save
 - `max_chars` 设置过小会导致字幕条目过多，建议 10-15
 - 视频分辨率越高，渲染越慢，建议预览时用低分辨率
 - 如不需要淡入淡出特效，设置为 `none` 可加快渲染速度
+
+### UVR5 声学分离
+
+- 首次使用时自动从 HuggingFace 下载模型到 `models/uvr5/` 目录
+- Roformer 模型（~1.8GB）：质量最高，推荐用于最终输出
+- MDX 模型（~90MB）：速度快，适合预览或对音质要求不高的场景
+- 中国大陆用户下载缓慢时，可设置环境变量 `HF_ENDPOINT=https://hf-mirror.com`
+- 如不需要声学分离，将 `uvr5_mode` 设为 `none` 可跳过此步骤，无需安装 `audio-separator`
+
+---
+
+## 对齐算法（LIS 锚点 + SequenceMatcher）
+
+### 问题背景
+
+传统方案（如 WhisperX）使用 Wav2Vec2 做音素级强制对齐，但存在一个根本缺陷：
+
+> Whisper 识别出 2 个字，参考文本有 5 个字时，Wav2Vec2 需要把 5 个字塞进 2 个字的时间窗口，结果必然不准。
+
+这是因为 WhisperX 的"文本替换"步骤——先按 Whisper 分段，再把参考文本按字数比例分配进去——在文本不匹配时会产生严重的对齐错误。
+
+### 本项目的方法
+
+本项目采用**纯文本级 token 匹配**，完全不依赖音素模型。核心流程：
+
+```
+音频 → Whisper 转写（word_timestamps=True）
+            ↓
+    ASR token 序列（带时间戳）
+            ↓
+参考文本 → tokenize → ref token 序列
+            ↓
+    ┌─────────────────────────────────┐
+    │ 第 1 步：找唯一 token 锚点      │
+    │   "银针"在 ASR 和参考文本中      │
+    │   都只出现一次 → 建立锚点       │
+    └─────────────────────────────────┘
+            ↓
+    ┌─────────────────────────────────┐
+    │ 第 2 步：LIS 确保锚点顺序       │
+    │   用最长递增子序列保证           │
+    │   ref→ASR 映射是单调递增的       │
+    │   （防止交叉匹配）               │
+    └─────────────────────────────────┘
+            ↓
+    ┌─────────────────────────────────┐
+    │ 第 3 步：锚点间 SequenceMatcher  │
+    │   在相邻锚点之间用 LCS diff     │
+    │   匹配非唯一 token             │
+    └─────────────────────────────────┘
+            ↓
+    ┌─────────────────────────────────┐
+    │ 第 4 步：时间推断               │
+    │   已匹配 token → 直接用 ASR 时间│
+    │   未匹配 token → 线性插值       │
+    └─────────────────────────────────┘
+            ↓
+    精确到 token 级的时间戳
+```
+
+### 为什么不用 DTW（动态时间规划）
+
+DTW 是另一种常见的对齐方法，但对我们的场景不适用：
+
+| 对比维度 | LIS + SequenceMatcher | DTW |
+|----------|----------------------|-----|
+| **匹配目标** | 参考文本 ↔ ASR 文本（文本→文本） | 音频特征 ↔ 音素序列（音频→文本） |
+| **依赖** | 仅标准库（bisect, difflib） | 需要 Wav2Vec2 / CTC 模型（~1.2GB） |
+| **处理不匹配** | 多出的 token 线性插值，缺少的忽略 | 需要文本与音频大致对应，否则对齐失败 |
+| **速度** | 极快（纯 Python 字符串操作） | 慢（需要 GPU/CPU 推理） |
+| **"2字 vs 5字"问题** | ✅ 匹配 2 字 + 插值 3 字 | ❌ 时间窗口不匹配导致对齐失败 |
+
+**核心区别**：DTW 是在音频层面做对齐（需要音频特征），LIS 是在文本层面做对齐（只需要 Whisper 的时间戳）。当参考文本与 Whisper 识别结果有出入时，文本级匹配天然更鲁棒——它只关心"哪些字匹配上了"，匹配上的直接用时间戳，没匹配上的用插值，不会因为字数不对就把时间戳搞乱。
+
+### 精度优化
+
+对齐完成后，还有两个后处理步骤进一步提升字幕精度：
+
+1. **能量波形边界吸附**：使用基于 RMS 能量的自定义 VAD 检测语音起止点，将字幕的起止时间吸附到语音边界，避免字幕在静音区显示或语音刚开始时就消失。
+
+2. **时间感知自动切分**：当一条字幕持续时间过长（>5.8s）或内部有较长的停顿（>0.55s）时，在标点处自动切分为多条字幕。
 
 ---
 
