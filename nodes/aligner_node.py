@@ -44,11 +44,17 @@ else:
 _uvr5_module = sys.modules.get("audio_srt_aligner_aligner_uvr5_separator")
 if _uvr5_module is not None:
     UVR5_MODE_OPTIONS = _uvr5_module.UVR5_MODE_OPTIONS
+    separate_vocals = _uvr5_module.separate_vocals
+    resolve_uvr5_model = _uvr5_module.resolve_uvr5_model
 else:
     _plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if _plugin_root not in sys.path:
         sys.path.insert(0, _plugin_root)
-    from aligner.uvr5_separator import UVR5_MODE_OPTIONS
+    from aligner.uvr5_separator import (
+        UVR5_MODE_OPTIONS,
+        separate_vocals,
+        resolve_uvr5_model,
+    )
 
 # ---------------------------------------------------------------------------
 # Whisper model directory — tell faster-whisper where to find local models
@@ -544,6 +550,40 @@ def _audio_to_wav_file(audio: dict) -> str:
     return wav_path
 
 
+def _load_wav_as_comfy_audio(wav_path: str) -> dict:
+    """Load a WAV file and return a ComfyUI AUDIO dict.
+
+    Uses torchaudio if available, otherwise falls back to av (guaranteed
+    project dependency).
+
+    Returns ``{"waveform": tensor(1, channels, samples), "sample_rate": int}``.
+    """
+    waveform: torch.Tensor
+    sr: int
+
+    try:
+        import torchaudio
+        waveform, sr = torchaudio.load(wav_path)
+    except Exception:
+        # Fallback: use av (already a project dependency)
+        import av
+        import numpy as np
+        container = av.open(wav_path)
+        resampler = av.audio.resampler.AudioResampler(format="fltp", layout="mono", rate=44100)
+        frames = []
+        for frame in container.decode(audio=0):
+            frames.append(resampler.resample(frame).to_ndarray())
+        container.close()
+        audio_np = np.concatenate(frames).reshape(-1)
+        sr = 44100
+        waveform = torch.from_numpy(audio_np).float()
+
+    # Ensure 2D: (channels, samples), then unsqueeze for batch: (1, channels, samples)
+    if waveform.dim() == 1:
+        waveform = waveform.unsqueeze(0)
+    return {"waveform": waveform.unsqueeze(0), "sample_rate": sr}
+
+
 class AudioSrtAligner:
     """ComfyUI node: align reference text to audio and produce SRT subtitle."""
 
@@ -584,8 +624,8 @@ class AudioSrtAligner:
             },
         }
 
-    RETURN_TYPES = ("STRING", "STRING", "INT", "FLOAT")
-    RETURN_NAMES = ("srt_string", "detected_language", "srt_entries", "coverage")
+    RETURN_TYPES = ("STRING", "STRING", "INT", "FLOAT", "AUDIO")
+    RETURN_NAMES = ("srt_string", "detected_language", "srt_entries", "coverage", "audio_out")
     FUNCTION = "process"
     CATEGORY = "audio/srt"
     DESCRIPTION = "Align reference text to audio and generate SRT subtitles"
@@ -600,7 +640,7 @@ class AudioSrtAligner:
         max_chars: int = 12,
         compute_type: str = "int8",
         uvr5_mode: str = "roformer",
-    ) -> Tuple[str, str, int, float]:
+    ) -> Tuple[str, str, int, float, dict]:
         """Run alignment pipeline and return SRT content."""
         # --- Validate inputs ---
         # reference_text can be empty - in that case we skip alignment and use raw Whisper transcription
@@ -613,6 +653,21 @@ class AudioSrtAligner:
         except Exception as exc:
             raise Exception(f"[AudioSrtAligner] Failed to convert audio to WAV: {exc}") from exc
 
+        # --- UVR5 vocal separation (optional) ---
+        working_wav_path = wav_path
+        uvr5_vocals_path: Optional[str] = None
+        if uvr5_mode and uvr5_mode != "none":
+            try:
+                model_filename = resolve_uvr5_model(uvr5_mode)
+                if model_filename:
+                    uvr5_vocals_path = separate_vocals(
+                        audio_path=wav_path,
+                        model_filename=model_filename,
+                    )
+                    working_wav_path = uvr5_vocals_path
+            except Exception as exc:
+                raise Exception(f"[AudioSrtAligner] UVR5 separation failed: {exc}") from exc
+
         # Resolve language — empty string means auto-detect
         resolved_language: Optional[str] = language.strip() if language and language.strip() else None
 
@@ -623,7 +678,6 @@ class AudioSrtAligner:
             compute_type=compute_type,
             language=resolved_language,
             beam_size=beam_size,
-            uvr5_mode=uvr5_mode,
         )
 
         # --- Run alignment or raw transcription ---
@@ -631,7 +685,7 @@ class AudioSrtAligner:
             if has_reference:
                 # With reference text: run alignment (校对模式)
                 srt_string, detected_language, srt_entries, coverage = generate_srt_string(
-                    audio_path=Path(wav_path),
+                    audio_path=Path(working_wav_path),
                     reference_text=reference_text.strip(),
                     config=config,
                 )
@@ -643,7 +697,7 @@ class AudioSrtAligner:
                     raise Exception("Engine module not loaded")
                 
                 timed_entries, audio_end, detected_language, segment_count = _engine_module.transcribe_to_timed_subtitles(
-                    audio_path=Path(wav_path),
+                    audio_path=Path(working_wav_path),
                     model_name=config.model_name,
                     device=config.device,
                     compute_type=config.compute_type,
@@ -673,13 +727,6 @@ class AudioSrtAligner:
             ) from exc
         except Exception as exc:
             raise Exception(f"[AudioSrtAligner] Processing failed: {exc}") from exc
-        finally:
-            # Always clean up temp WAV file
-            if wav_path:
-                try:
-                    os.unlink(wav_path)
-                except OSError:
-                    pass
 
         # --- Post-process: apply max_chars subtitle length limit ---
         if max_chars and max_chars > 0:
@@ -694,9 +741,21 @@ class AudioSrtAligner:
                 entries = parse_srt(srt_string)
                 srt_string, srt_entries = _process_srt_entries(entries, max_chars)
 
+        # --- Load working audio as ComfyUI AUDIO dict ---
+        audio_out = _load_wav_as_comfy_audio(working_wav_path)
+
+        # --- Clean up temp files ---
+        for tmp_path in (wav_path, uvr5_vocals_path):
+            if tmp_path:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+
         return (
             srt_string,
             detected_language or "unknown",
             srt_entries,
             coverage,
+            audio_out,
         )
