@@ -65,6 +65,23 @@ def separate_vocals(
     if not audio_file.exists():
         raise FileNotFoundError(f"Audio file not found: {audio_path}")
 
+    # MDX models use onnxruntime which is incompatible with numpy>=2 on Apple Silicon.
+    # Warn the user before crashing.
+    if model_filename.endswith(".onnx"):
+        try:
+            import numpy as _np
+            import platform
+            if _np.__version__.startswith("2.") and platform.machine() == "arm64":
+                if progress:
+                    progress(
+                        "[AudioSrtAligner] WARNING: MDX models require onnxruntime, "
+                        "which may crash on Apple Silicon with numpy>=2. "
+                        "Use 'roformer' mode on this platform, or install "
+                        "numpy<2 if you need MDX locally."
+                    )
+        except Exception:
+            pass
+
     # Ensure model directory exists
     model_path = Path(model_dir)
     model_path.mkdir(parents=True, exist_ok=True)
