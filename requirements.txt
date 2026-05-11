@@ -3,3 +3,4 @@ numpy
 Pillow>=10.0.0
 av>=10.0.0
 audio-separator[gpu]>=0.44.0
+stable-ts[fw]>=2.16.0

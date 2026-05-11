@@ -612,6 +612,10 @@ class AudioSrtAligner:
                         "multiline": False,
                     },
                 ),
+                # engine_mode: "stable-ts" uses cross-attention forced alignment for proofreading.
+                # "LIS" uses the original LIS anchor + SequenceMatcher token matching algorithm.
+                # Only affects the with-reference-text path. No-reference always uses faster-whisper ASR.
+                "engine_mode": (["LIS", "stable-ts"], {"default": "stable-ts"}),
             },
             "optional": {
                 "beam_size": ("INT", {"default": 5, "min": 1, "max": 10, "step": 1}),
@@ -636,9 +640,10 @@ class AudioSrtAligner:
         reference_text: str,
         model_size: str = "small",
         language: str = "zh",
+        engine_mode: str = "stable-ts",
         beam_size: int = 5,
         max_chars: int = 12,
-        compute_type: str = "int8",
+        compute_type: str = "float16",
         uvr5_mode: str = "roformer",
     ) -> Tuple[str, str, int, float, dict]:
         """Run alignment pipeline and return SRT content."""
@@ -684,6 +689,12 @@ class AudioSrtAligner:
         try:
             if has_reference:
                 # With reference text: run alignment (校对模式)
+                # Conditional engine dispatch based on engine_mode
+                if engine_mode == "stable-ts":
+                    from aligner.stable_ts_engine import generate_srt_string
+                else:
+                    from aligner.engine import generate_srt_string
+                
                 srt_string, detected_language, srt_entries, coverage = generate_srt_string(
                     audio_path=Path(working_wav_path),
                     reference_text=reference_text.strip(),

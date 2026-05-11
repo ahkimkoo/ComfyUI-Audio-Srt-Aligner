@@ -9,6 +9,7 @@ dependencies = [
     "Pillow>=10.0.0",
     "av>=10.0.0",
     "audio-separator>=0.44.0",
+    "stable-ts[fw]>=2.16.0",
 ]
 classifiers = [
     "Operating System :: OS Independent",
